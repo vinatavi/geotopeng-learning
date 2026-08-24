@@ -13,6 +13,7 @@
 * **Eksplorasi Etnomatematika:** Visualisasi transformasi geometri menggunakan motif dan karakter Topeng Malangan.
 * **Modul Discovery Learning:** Alur belajar berbasis penemuan konsep secara mandiri.
 * **Elemen Gamifikasi:** Kuis interaktif, sistem poin/badge, dan tantangan di setiap level.
+* **Audio Aksesibel:** Narasi Bahasa Indonesia, kontrol volume, dan efek suara tombol/hasil kuis tanpa autoplay.
 
 ---
 
@@ -23,6 +24,29 @@
 ---
 
 ### Cara Menjalankan secara Lokal
-1. **Clone repositori ini:**
+1. Ekstrak seluruh isi ZIP ke satu folder. Jangan memisahkan `index.html`, `style.css`, dan `script.js`.
+2. Klik dua kali `index.html`, lalu buka dengan Chrome atau Microsoft Edge.
+3. Tekan ikon **suara** di kanan atas untuk membuka narasi halaman dan pengaturan volume.
+4. Jika browser membatasi fitur saat dibuka langsung, jalankan server lokal dari folder proyek:
+
    ```bash
-   git clone [https://github.com/vinatavi/geotopeng-learning.git](https://github.com/vinatavi/geotopeng-learning.git)
+   python -m http.server 8000
+   ```
+
+   Setelah itu buka `http://localhost:8000`.
+
+### Catatan Audio
+* Narasi memakai Web Speech API dan memilih suara `id-ID` jika tersedia di perangkat.
+* Browser sengaja tidak memutar suara otomatis. Pengguna harus menekan **Dengarkan halaman**.
+* Ketersediaan dan karakter suara mengikuti sistem operasi/browser pengguna.
+
+### Struktur Berkas
+
+```text
+GEOTOPENG/
+├── index.html
+├── style.css
+├── script.js
+├── og-image.png
+└── README.md
+```

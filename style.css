@@ -135,7 +135,8 @@ a{color:inherit;text-decoration:none;}
 .mobile-drawer i{width:18px;height:18px;}
 
 /* ================= ACCESSIBILITY WIDGET ================= */
-.a11y-widget{position:relative;flex-shrink:0;}
+.a11y-widget,.audio-widget{position:relative;flex-shrink:0;}
+.audio-widget{margin-left:-6px;}
 .a11y-toggle{
   display:flex;align-items:center;justify-content:center;width:40px;height:40px;
   background:none;border:1.5px solid var(--border-color);border-radius:999px;
@@ -143,6 +144,8 @@ a{color:inherit;text-decoration:none;}
 }
 .a11y-toggle:hover{background:var(--ochre-light);border-color:var(--ochre);}
 .a11y-toggle i{width:20px;height:20px;}
+.audio-fallback-icon{display:none;font-size:17px;line-height:1;}
+html.no-lucide .audio-fallback-icon{display:block;}
 .a11y-toggle[aria-expanded="true"]{background:var(--dark-charcoal);border-color:var(--dark-charcoal);color:var(--cream-bg);}
 
 .a11y-panel{
@@ -176,6 +179,19 @@ a{color:inherit;text-decoration:none;}
 }
 .a11y-switch[aria-checked="true"] .a11y-switch-track{background:var(--terracotta);}
 .a11y-switch[aria-checked="true"] .a11y-switch-thumb{transform:translateX(16px);}
+
+.audio-panel{width:290px;}
+.audio-help{font-size:.84rem;line-height:1.45;color:var(--sage-light-text);margin:0 0 12px;}
+.audio-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.audio-action{display:flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:8px;border:1.5px solid var(--border-color);border-radius:var(--radius-s);background:var(--card-white);font:600 .82rem var(--font-body);color:var(--dark-charcoal);}
+.audio-action:hover:not(:disabled){border-color:var(--terracotta);background:var(--ochre-light);}
+.audio-action:disabled{opacity:.45;cursor:not-allowed;}
+.audio-action i{width:16px;height:16px;}
+.audio-stop{color:var(--terracotta);}
+.audio-volume{display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;margin-bottom:6px;}
+#audioVolume{width:100%;accent-color:var(--terracotta);}
+.audio-feedback{margin-top:14px;}
+.audio-status{font-size:.78rem;color:var(--sage-light-text);margin:10px 0 0;min-height:1.2em;}
 
 /* Skala ukuran teks: menaikkan font-size akar, ikut mempengaruhi semua ukuran berbasis rem/clamp() di halaman */
 html[data-a11y-text="lg"]{font-size:112.5%;}

@@ -186,6 +186,7 @@ const navApp = document.getElementById("navApp");
 const mobileDrawer = document.getElementById("mobileDrawer");
 
 function navigate(viewName){
+  stopNarration();
   views.forEach(v=>v.dataset.active = (v.dataset.view===viewName) ? "true":"false");
   document.querySelectorAll("[data-nav]").forEach(btn=>{
     btn.classList.toggle("active", btn.dataset.nav===viewName);
@@ -308,6 +309,59 @@ function initA11yWidget(){
     saveA11yPrefs(prefs);
     applyPrefs();
   });
+}
+
+/* ---------- AUDIO & NARASI (Web Speech API, tanpa autoplay) ---------- */
+let AUDIO_PREFS = { volume:0.8, feedback:true };
+let audioContext = null;
+function loadAudioPrefs(){
+  try{ AUDIO_PREFS = {...AUDIO_PREFS, ...JSON.parse(localStorage.getItem("geotopeng_audio")||"{}")}; }catch(e){}
+}
+function saveAudioPrefs(){ try{ localStorage.setItem("geotopeng_audio", JSON.stringify(AUDIO_PREFS)); }catch(e){} }
+function stopNarration(){
+  if("speechSynthesis" in window) window.speechSynthesis.cancel();
+  const play=document.getElementById("audioNarrateBtn"), stop=document.getElementById("audioStopBtn"), status=document.getElementById("audioStatus");
+  if(play) play.disabled=false; if(stop) stop.disabled=true; if(status) status.textContent="Siap digunakan.";
+}
+function playFeedback(kind="tap"){
+  if(!AUDIO_PREFS.feedback) return;
+  try{
+    audioContext=audioContext||new (window.AudioContext||window.webkitAudioContext)();
+    const oscillator=audioContext.createOscillator(), gain=audioContext.createGain();
+    oscillator.type="sine"; oscillator.frequency.value=kind==="success"?660:kind==="wrong"?220:440;
+    gain.gain.setValueAtTime(.0001,audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.055*AUDIO_PREFS.volume+.005,audioContext.currentTime+.01);
+    gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime+(kind==="success"?.28:.12));
+    oscillator.connect(gain).connect(audioContext.destination); oscillator.start(); oscillator.stop(audioContext.currentTime+(kind==="success"?.3:.14));
+  }catch(e){}
+}
+function getNarrationText(){
+  const active=document.querySelector('.view[data-active="true"]');
+  if(!active) return "Selamat datang di GEOTOPENG.";
+  return [...active.querySelectorAll("h1,h2,h3,.eyebrow,p")]
+    .filter(el=>!el.closest("nav,button,.quiz-options,.recap-detail")&&el.offsetParent!==null)
+    .map(el=>el.textContent.replace(/\s+/g," ").trim()).filter(Boolean).join(". ").slice(0,2600)||"Halaman GEOTOPENG siap dipelajari.";
+}
+function initAudioWidget(){
+  loadAudioPrefs();
+  const toggle=document.getElementById("audioToggleBtn"),panel=document.getElementById("audioPanel"),play=document.getElementById("audioNarrateBtn"),stop=document.getElementById("audioStopBtn"),volume=document.getElementById("audioVolume"),volumeValue=document.getElementById("audioVolumeValue"),feedback=document.getElementById("audioFeedbackBtn"),status=document.getElementById("audioStatus");
+  if(!toggle||!panel) return;
+  volume.value=String(AUDIO_PREFS.volume); volumeValue.textContent=Math.round(AUDIO_PREFS.volume*100)+"%"; feedback.setAttribute("aria-checked",String(AUDIO_PREFS.feedback));
+  toggle.addEventListener("click",()=>{panel.hidden=!panel.hidden;toggle.setAttribute("aria-expanded",String(!panel.hidden));});
+  document.addEventListener("click",e=>{if(!panel.hidden&&!panel.contains(e.target)&&!toggle.contains(e.target)){panel.hidden=true;toggle.setAttribute("aria-expanded","false");}});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!panel.hidden){panel.hidden=true;toggle.setAttribute("aria-expanded","false");toggle.focus();}});
+  volume.addEventListener("input",()=>{AUDIO_PREFS.volume=Number(volume.value);volumeValue.textContent=Math.round(AUDIO_PREFS.volume*100)+"%";saveAudioPrefs();});
+  feedback.addEventListener("click",()=>{AUDIO_PREFS.feedback=!AUDIO_PREFS.feedback;feedback.setAttribute("aria-checked",String(AUDIO_PREFS.feedback));saveAudioPrefs();if(AUDIO_PREFS.feedback)playFeedback();});
+  stop.addEventListener("click",stopNarration);
+  play.addEventListener("click",()=>{
+    if(!("speechSynthesis" in window)){status.textContent="Browser ini belum mendukung narasi suara.";return;}
+    stopNarration(); const utterance=new SpeechSynthesisUtterance(getNarrationText()); const voices=window.speechSynthesis.getVoices();
+    utterance.voice=voices.find(v=>/^id[-_]/i.test(v.lang))||voices.find(v=>/indonesia/i.test(v.name))||null;
+    utterance.lang="id-ID";utterance.rate=.94;utterance.pitch=1;utterance.volume=AUDIO_PREFS.volume;
+    utterance.onstart=()=>{play.disabled=true;stop.disabled=false;status.textContent="Sedang membacakan halaman…";}; utterance.onend=stopNarration;
+    utterance.onerror=()=>{stopNarration();status.textContent="Narasi gagal diputar. Coba gunakan Chrome atau Edge.";}; window.speechSynthesis.speak(utterance);
+  });
+  document.addEventListener("click",e=>{if(e.target.closest("button")&&!e.target.closest("#audioNarrateBtn,#audioStopBtn,#audioFeedbackBtn"))playFeedback();});
 }
 
 /* ---------- DASHBOARD ---------- */
@@ -436,6 +490,7 @@ function renderQuiz(kind){
     let score = 0;
     answers.forEach((a,i)=>{ if(a===data[i].correct) score++; });
     const percent = Math.round((score/data.length)*100);
+    playFeedback(percent >= 70 ? "success" : "wrong");
     STATE[stateKey] = {score, percent, answers, total:data.length};
     saveState();
     quizSessions[kind] = null; // sesi ditutup, percobaan berikutnya mulai baru & teracak ulang
@@ -955,8 +1010,10 @@ function renderProfil(){
 
 /* ---------- INIT ---------- */
 window.addEventListener("DOMContentLoaded", ()=>{
+  if(!window.lucide) document.documentElement.classList.add("no-lucide");
   refreshIcons();
   initA11yWidget();
+  initAudioWidget();
   refreshGlobalStats();
   navigate("landing");
   if(stateLoadWasCorrupt){
